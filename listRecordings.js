@@ -3,28 +3,24 @@ const freeclimbSDK = require('@freeclimb/sdk')
 
 const accountId = process.env.ACCOUNT_ID
 const apiKey = process.env.API_KEY
-// your freeclimb API key (available in the Dashboard) - be sure to set up environment variables to store these values
-const freeclimb = freeclimbSDK(accountId, apiKey)
+const configuration = freeclimbSDK.createConfiguration({ accountId, apiKey })
+const freeclimb = new freeclimbSDK.DefaultApi(configuration)
 
 getRecordings().then(recordings => {
-  // Use recordings
+  console.log('got recordings', recordings)
 }).catch(err => {
-  // Catch Errors
+  console.log(err)
 })
 
 async function getRecordings() {
-  // Create array to store all recordings
   const recordings = []
-  // Invoke GET method to retrieve initial list of recordings information
-  const first = await freeclimb.api.recordings.getList()
-  recordings.push(...first.recordings)
-  // Get Uri for next page
-  let nextPageUri = first.nextPageUri
-  // Retrieve entire recordings list 
-  while (nextPageUri) {
-    const nextPage = await freeclimb.api.recordings.getNextPage(nextPageUri)
-    recordings.push(...nextPage.recordings)
-    nextPageUri = nextPage.nextPageUri
+
+  let response = await freeclimb.listRecordings()
+  recordings.push(...response.recordings)
+
+  while (response.nextPageUri) {
+    response = await freeclimb.getNextPage(response)
+    recordings.push(...response.recordings)
   }
   return recordings
 }
